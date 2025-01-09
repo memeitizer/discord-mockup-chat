@@ -1,0 +1,59 @@
+name: Build and Release React App
+
+on:
+  push:
+    branches:
+      - main # Run this workflow only when pushing to the `main` branch
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18 # Specify the Node.js version
+
+    # Install dependencies and build the app
+    - name: Install and build
+      run: |
+        npm install
+        npm run build
+
+    # Upload build artifacts
+    - name: Upload build folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: build
+        path: build
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Download the build artifact
+    - name: Download build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: build
+
+    # Create a release
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: build
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: v${{ github.run_number }}
+        release_name: "React App Build (v${{ github.run_number }})"
